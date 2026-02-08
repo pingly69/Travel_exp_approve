@@ -30,7 +30,6 @@
                 <div id="user-badge" class="bg-white/10 border border-white/20 text-[9px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider italic">Initializing...</div>
             </div>
             
-            <!-- Login Panel (Show if not bound) -->
             <div id="login-section" class="bg-white/10 p-2.5 rounded-2xl border border-white/10 backdrop-blur-md hidden">
                 <div class="flex gap-2">
                     <input type="text" id="profile-code" placeholder="ใส่รหัสเพื่อผูกบัญชี LINE" 
@@ -39,7 +38,6 @@
                 </div>
             </div>
 
-            <!-- Profile Display -->
             <div id="current-user" class="hidden flex items-center justify-between">
                 <div class="flex items-center gap-2">
                     <img id="user-img" src="" class="w-8 h-8 rounded-full border border-indigo-400 hidden">
@@ -67,7 +65,6 @@
         </div>
     </main>
 
-    <!-- Bottom Actions -->
     <div id="bulk-bar" class="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-xl p-5 transform translate-y-full transition-all duration-500 border-t border-slate-100 z-40 rounded-t-3xl shadow-[0_-15px_35px_rgba(0,0,0,0.08)]">
         <div class="max-w-md mx-auto">
             <div class="flex items-center justify-between mb-3 px-1">
@@ -87,7 +84,6 @@
         </div>
     </div>
 
-    <!-- Overlay -->
     <div id="overlay" class="fixed inset-0 bg-slate-900/60 hidden z-[60] flex items-center justify-center p-6 backdrop-blur-sm">
         <div class="bg-white p-8 rounded-[2rem] text-center w-full max-w-xs shadow-2xl scale-in-center">
             <div class="loading-spinner mx-auto mb-4"></div>
@@ -96,12 +92,8 @@
     </div>
 
     <script>
-        // ******************************************
-        // *** ตั้งค่า API URL และ LIFF ID ที่นี่ (แก้ไขให้ถูกต้องแล้ว) ***
-        // ******************************************
         const API_URL = 'https://script.google.com/macros/s/AKfycbz5doQvY_Zpi553rMiF73r53FcjIa-UGlum-AOruvwxsFqNzjVY2Jt4xAqPdDrxo668/exec'; 
         const LIFF_ID = '2009016720-QCpd1m4p'; 
-        // ******************************************
 
         let allItems = [];
         let selected = new Set();
@@ -119,7 +111,6 @@
             try {
                 const profile = await liff.getProfile();
                 session.lineUid = profile.userId;
-                
                 if (profile.pictureUrl) {
                     document.getElementById('user-img').src = profile.pictureUrl;
                     document.getElementById('user-img').classList.remove('hidden');
@@ -127,19 +118,14 @@
                 }
                 document.getElementById('user-badge').innerText = "LINE READY";
                 document.getElementById('user-badge').classList.replace('bg-white/10', 'bg-emerald-500/20');
-                
-                // --- ขั้นตอน Auto-Login: เช็คว่าเคยผูกบัญชีใน Col C ไว้หรือยัง ---
                 const existing = await apiRequest({ action: 'checkExistingUser', lineUid: session.lineUid });
-                
                 if (existing && existing.exists) {
-                    // เคยผูกไว้แล้ว ข้ามหน้า Login ทันที
                     session.userId = existing.userId;
                     session.name = existing.name;
                     document.getElementById('user-display-name').innerText = session.name;
                     document.getElementById('current-user').classList.remove('hidden');
                     fetchData(); 
                 } else {
-                    // ไม่เคยผูกบัญชี ให้แสดงช่องกรอกรหัส
                     document.getElementById('login-section').classList.remove('hidden');
                     document.getElementById('init-loader').classList.add('hidden');
                     document.getElementById('init-text').innerText = "กรุณากรอกรหัสพนักงานเพื่อผูกบัญชีในครั้งแรก";
@@ -218,9 +204,16 @@
                                     <span>ที่จอด: <span class="text-slate-700">${item.parking}</span></span>
                                     <span>ค่ารถ: <span class="text-slate-700">${item.delivery}</span></span>
                                 </div>
-                                <div class="flex items-center gap-1 text-[9px] text-slate-600 font-black italic">
-                                    <i data-lucide="car" class="w-2.5 h-2.5"></i>
-                                    <span>${item.date}</span>
+                                <div class="flex flex-col items-end gap-1">
+                                    <!-- เพิ่มการแสดงผลวันที่ขอเบิก (reqDate) -->
+                                    <div class="flex items-center gap-1 text-[9px] text-slate-500 font-bold">
+                                        <i data-lucide="calendar" class="w-2.5 h-2.5"></i>
+                                        <span>${item.reqDate}</span>
+                                    </div>
+                                    <div class="flex items-center gap-1 text-[9px] text-slate-600 font-black italic">
+                                        <i data-lucide="car" class="w-2.5 h-2.5"></i>
+                                        <span>${item.date}</span>
+                                    </div>
                                 </div>
                             </div>
                         </div>
