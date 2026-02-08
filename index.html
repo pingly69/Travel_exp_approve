@@ -205,10 +205,10 @@
                                     <span>ค่ารถ: <span class="text-slate-700">${item.delivery}</span></span>
                                 </div>
                                 <div class="flex flex-col items-end gap-1">
-                                    <!-- เพิ่มการแสดงผลวันที่ขอเบิก (reqDate) -->
+                                    <!-- ส่วนแสดงผลวันที่ขอเบิก (reqDate) -->
                                     <div class="flex items-center gap-1 text-[9px] text-slate-500 font-bold">
                                         <i data-lucide="calendar" class="w-2.5 h-2.5"></i>
-                                        <span>${item.reqDate}</span>
+                                        <span>${item.reqDate || '-'}</span>
                                     </div>
                                     <div class="flex items-center gap-1 text-[9px] text-slate-600 font-black italic">
                                         <i data-lucide="car" class="w-2.5 h-2.5"></i>
