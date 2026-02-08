@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ระบบอนุมัติรายการ - LIFF Mode</title>
+    <title>ระบบอนุมัติรายการ - LIFF</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
@@ -20,7 +20,6 @@
 </head>
 <body class="pb-36">
 
-    <!-- Header: Compact Style -->
     <header class="bg-indigo-900 text-white pt-4 pb-4 px-5 sticky top-0 z-50 rounded-b-3xl shadow-lg">
         <div class="max-w-md mx-auto">
             <div class="flex justify-between items-center mb-3">
@@ -28,17 +27,19 @@
                     <i data-lucide="shield-check" class="w-5 h-5 text-indigo-400"></i>
                     <h1 class="text-lg font-bold">ระบบอนุมัติ</h1>
                 </div>
-                <div id="user-badge" class="bg-white/10 border border-white/20 text-[9px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider italic">Initializing LIFF...</div>
+                <div id="user-badge" class="bg-white/10 border border-white/20 text-[9px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider italic">Initializing...</div>
             </div>
             
+            <!-- Login Panel (Show if not bound) -->
             <div id="login-section" class="bg-white/10 p-2.5 rounded-2xl border border-white/10 backdrop-blur-md hidden">
                 <div class="flex gap-2">
                     <input type="text" id="profile-code" placeholder="ใส่รหัสเพื่อผูกบัญชี LINE" 
                         class="flex-1 py-2 px-4 rounded-xl text-xs text-gray-800 focus:outline-none">
-                    <button onclick="handleLogin()" class="bg-white text-indigo-900 px-5 py-2 rounded-xl text-xs font-bold shadow-md">ตกลง</button>
+                    <button onclick="handleLogin()" class="bg-white text-indigo-900 px-5 py-2 rounded-xl text-xs font-bold shadow-md active:scale-95 transition-transform">ตกลง</button>
                 </div>
             </div>
 
+            <!-- Profile Display -->
             <div id="current-user" class="hidden flex items-center justify-between">
                 <div class="flex items-center gap-2">
                     <img id="user-img" src="" class="w-8 h-8 rounded-full border border-indigo-400 hidden">
@@ -50,7 +51,7 @@
                         <span class="text-[9px] text-indigo-300 uppercase font-bold">ผู้อนุมัติ</span>
                     </div>
                 </div>
-                <button onclick="fetchData()" class="p-2 bg-white/10 rounded-xl">
+                <button onclick="fetchData()" class="p-2 bg-white/10 rounded-xl active:bg-white/20 transition-colors">
                     <i data-lucide="rotate-cw" class="w-4 h-4"></i>
                 </button>
             </div>
@@ -59,13 +60,14 @@
 
     <main class="max-w-md mx-auto px-4 mt-4">
         <div id="list-container" class="space-y-3">
-            <div class="text-center py-20 text-slate-400">
-                <p id="init-text">กำลังโหลดระบบ LINE...</p>
+            <div class="text-center py-24 text-slate-400">
+                <div id="init-loader" class="loading-spinner mx-auto mb-3"></div>
+                <p id="init-text" class="text-sm font-medium">กำลังเตรียมความพร้อมของระบบ...</p>
             </div>
         </div>
     </main>
 
-    <!-- Bottom Actions: Approved/Rejected -->
+    <!-- Bottom Actions -->
     <div id="bulk-bar" class="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-xl p-5 transform translate-y-full transition-all duration-500 border-t border-slate-100 z-40 rounded-t-3xl shadow-[0_-15px_35px_rgba(0,0,0,0.08)]">
         <div class="max-w-md mx-auto">
             <div class="flex items-center justify-between mb-3 px-1">
@@ -85,8 +87,9 @@
         </div>
     </div>
 
+    <!-- Overlay -->
     <div id="overlay" class="fixed inset-0 bg-slate-900/60 hidden z-[60] flex items-center justify-center p-6 backdrop-blur-sm">
-        <div class="bg-white p-8 rounded-[2rem] text-center w-full max-w-xs shadow-2xl">
+        <div class="bg-white p-8 rounded-[2rem] text-center w-full max-w-xs shadow-2xl scale-in-center">
             <div class="loading-spinner mx-auto mb-4"></div>
             <p id="overlay-text" class="text-base font-bold text-slate-800">กำลังประมวลผล...</p>
         </div>
@@ -94,7 +97,7 @@
 
     <script>
         // ******************************************
-        // *** ตั้งค่า API URL และ LIFF ID ที่นี่ ***
+        // *** ตั้งค่า API URL และ LIFF ID ที่นี่ (แก้ไขให้ถูกต้องแล้ว) ***
         // ******************************************
         const API_URL = 'https://script.google.com/macros/s/AKfycbz5doQvY_Zpi553rMiF73r53FcjIa-UGlum-AOruvwxsFqNzjVY2Jt4xAqPdDrxo668/exec'; 
         const LIFF_ID = '2009016720-QCpd1m4p'; 
@@ -108,14 +111,15 @@
             lucide.createIcons();
             liff.init({ liffId: LIFF_ID }).then(() => {
                 if (!liff.isLoggedIn()) { liff.login(); } 
-                else { loadProfile(); }
+                else { checkAuth(); }
             }).catch(err => showError("LIFF Init Error: " + err));
         };
 
-        async function loadProfile() {
+        async function checkAuth() {
             try {
                 const profile = await liff.getProfile();
                 session.lineUid = profile.userId;
+                
                 if (profile.pictureUrl) {
                     document.getElementById('user-img').src = profile.pictureUrl;
                     document.getElementById('user-img').classList.remove('hidden');
@@ -123,16 +127,28 @@
                 }
                 document.getElementById('user-badge').innerText = "LINE READY";
                 document.getElementById('user-badge').classList.replace('bg-white/10', 'bg-emerald-500/20');
-                document.getElementById('login-section').classList.remove('hidden');
-                document.getElementById('init-text').innerText = "กรุณากรอกรหัสพนักงานเพื่อเริ่มงาน";
-            } catch (e) { showError("Profile Error: " + e); }
+                
+                // --- ขั้นตอน Auto-Login: เช็คว่าเคยผูกบัญชีใน Col C ไว้หรือยัง ---
+                const existing = await apiRequest({ action: 'checkExistingUser', lineUid: session.lineUid });
+                
+                if (existing && existing.exists) {
+                    // เคยผูกไว้แล้ว ข้ามหน้า Login ทันที
+                    session.userId = existing.userId;
+                    session.name = existing.name;
+                    document.getElementById('user-display-name').innerText = session.name;
+                    document.getElementById('current-user').classList.remove('hidden');
+                    fetchData(); 
+                } else {
+                    // ไม่เคยผูกบัญชี ให้แสดงช่องกรอกรหัส
+                    document.getElementById('login-section').classList.remove('hidden');
+                    document.getElementById('init-loader').classList.add('hidden');
+                    document.getElementById('init-text').innerText = "กรุณากรอกรหัสพนักงานเพื่อผูกบัญชีในครั้งแรก";
+                }
+            } catch (e) { showError("Entry Error: " + e.message); }
         }
 
         async function apiRequest(payload) {
-            const resp = await fetch(API_URL, { 
-                method: 'POST', 
-                body: JSON.stringify(payload)
-            });
+            const resp = await fetch(API_URL, { method: 'POST', body: JSON.stringify(payload) });
             const res = await resp.json();
             if (!res.success) throw new Error(res.message);
             return res.data;
@@ -141,7 +157,7 @@
         async function handleLogin() {
             const code = document.getElementById('profile-code').value.trim();
             if (!code) return;
-            showOverlay("ตรวจสอบสิทธิ์...");
+            showOverlay("กำลังตรวจสอบข้อมูล...");
             try {
                 const config = await apiRequest({ action: 'getAdminConfig', userId: code, lineUid: session.lineUid });
                 if (config.isAdmin) {
@@ -154,7 +170,7 @@
                     fetchData();
                 } else {
                     hideOverlay();
-                    showError("รหัสไม่ถูกต้อง หรือไม่มีสิทธิ์เข้าถึง");
+                    showError("รหัสพนักงานไม่ถูกต้อง หรือไม่มีสิทธิ์เข้าถึง");
                 }
             } catch (e) { hideOverlay(); showError(e.message); }
         }
@@ -162,7 +178,7 @@
         async function fetchData() {
             selected.clear();
             updateActionBar();
-            document.getElementById('list-container').innerHTML = `<div class="bg-white p-10 rounded-3xl text-center"><div class="loading-spinner mx-auto mb-3"></div><p class="text-xs">กำลังโหลดรายการ...</p></div>`;
+            document.getElementById('list-container').innerHTML = `<div class="bg-white p-10 rounded-3xl text-center card-shadow"><div class="loading-spinner mx-auto mb-3"></div><p class="text-xs font-medium text-slate-500">กำลังดึงข้อมูล...</p></div>`;
             try {
                 allItems = await apiRequest({ action: 'getPendingItems', userId: session.userId });
                 render();
@@ -172,7 +188,7 @@
         function render() {
             const container = document.getElementById('list-container');
             if (allItems.length === 0) {
-                container.innerHTML = `<div class="bg-white p-12 rounded-3xl text-center border shadow-sm"><i data-lucide="check" class="w-8 h-8 text-emerald-500 mx-auto mb-3"></i><p class="font-bold text-sm text-slate-800">ไม่มีรายการค้างอนุมัติ</p></div>`;
+                container.innerHTML = `<div class="bg-white p-12 rounded-3xl text-center border shadow-sm"><i data-lucide="check" class="w-8 h-8 text-emerald-500 mx-auto mb-3"></i><p class="font-bold text-sm text-slate-800">จัดการรายการทั้งหมดเรียบร้อยแล้ว</p></div>`;
                 lucide.createIcons();
                 return;
             }
@@ -194,7 +210,7 @@
                                     <p class="truncate text-slate-500">ไซต์: <span class="text-slate-900 font-bold">${item.site}</span></p>
                                     <p class="text-right text-slate-500">ระยะ: <span class="text-slate-900 font-bold">${item.dist} กม.</span></p>
                                 </div>
-                                <div class="pt-2 border-t border-slate-200/60"><p class="text-[9px] text-slate-400 italic leading-relaxed">"${item.details || ''}"</p></div>
+                                <div class="pt-2 border-t border-slate-200/60 font-light italic text-[9px] text-slate-400">"${item.details || ''}"</div>
                             </div>
                             <div class="flex justify-between items-end px-0.5">
                                 <div class="flex flex-wrap gap-x-2.5 gap-y-0.5 text-[9px] font-bold text-slate-400">
@@ -202,7 +218,7 @@
                                     <span>ที่จอด: <span class="text-slate-700">${item.parking}</span></span>
                                     <span>ค่ารถ: <span class="text-slate-700">${item.delivery}</span></span>
                                 </div>
-                                <div class="flex items-center gap-1 text-[9px] text-slate-600 font-bold italic">
+                                <div class="flex items-center gap-1 text-[9px] text-slate-600 font-black italic">
                                     <i data-lucide="car" class="w-2.5 h-2.5"></i>
                                     <span>${item.date}</span>
                                 </div>
@@ -224,14 +240,14 @@
                 selected.clear();
                 hideOverlay();
                 fetchData();
-            } catch (e) { hideOverlay(); alert(e.message); }
+            } catch (e) { hideOverlay(); alert("เกิดข้อผิดพลาด: " + e.message); }
         }
 
         function toggle(id) { const s = id.toString(); if (selected.has(s)) selected.delete(s); else selected.add(s); render(); }
         function updateActionBar() { document.getElementById('sel-count').innerText = selected.size; const bar = document.getElementById('bulk-bar'); if (selected.size > 0) bar.classList.remove('translate-y-full'); else bar.classList.add('translate-y-full'); }
         function showOverlay(t) { document.getElementById('overlay-text').innerText = t; document.getElementById('overlay').classList.remove('hidden'); }
         function hideOverlay() { document.getElementById('overlay').classList.add('hidden'); }
-        function showError(m) { document.getElementById('list-container').innerHTML = `<div class="p-6 text-center bg-rose-50 text-rose-600 rounded-3xl border border-rose-100 shadow-sm"><p class="text-xs font-bold">${m}</p><button onclick="location.reload()" class="mt-4 px-4 py-1.5 bg-rose-600 text-white text-[10px] rounded-full font-bold">ลองใหม่</button></div>`; lucide.createIcons(); }
+        function showError(m) { document.getElementById('list-container').innerHTML = `<div class="p-6 text-center bg-rose-50 text-rose-600 rounded-3xl border border-rose-100 shadow-sm"><p class="text-xs font-bold">${m}</p><button onclick="location.reload()" class="mt-4 px-4 py-1.5 bg-rose-600 text-white text-[10px] rounded-full font-bold shadow-md transition-all active:scale-95">รีเฟรชหน้าเว็บ</button></div>`; lucide.createIcons(); }
     </script>
 </body>
 </html>
